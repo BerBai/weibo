@@ -222,7 +222,11 @@ func (database *Database) AddMblog(mblog *Mblog) error {
 	var uid, id int64
 	var mblogID, theText, createdAt string
 	if mblog.Retweeted != nil {
-		uid = mblog.Retweeted.User.ID
+		if mblog.Retweeted.User != nil {
+			uid = mblog.Retweeted.User.ID
+		} else {
+			uid = -1
+		}
 		id = mblog.Retweeted.ID
 		mblogID = mblog.Retweeted.MblogID
 		theText = mblog.Retweeted.TheText()
