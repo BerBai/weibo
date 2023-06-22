@@ -19,14 +19,17 @@ type User struct {
 }
 
 type Mblog struct {
-	User        *User  `json:"user"`
-	CreatedAt   string `json:"created_at"`
-	ID          int64  `json:"id"`
-	MblogID     string `json:"mblogid"`
-	TextRaw     string `json:"text_raw"`
-	Text        string `json:"text"`
-	IsLongText  bool   `json:"isLongText"`
-	Retweeted   *Mblog `json:"retweeted_status,omitempty"`
+	User        *User                  `json:"user"`
+	CreatedAt   string                 `json:"created_at"`
+	ID          int64                  `json:"id"`
+	MblogID     string                 `json:"mblogid"`
+	TextRaw     string                 `json:"text_raw"`
+	Text        string                 `json:"text"`
+	IsLongText  bool                   `json:"isLongText"`
+	PicNum      int8                   `json:"pic_num"`
+	PicIds      []string               `json:"pic_ids"`
+	PicInfos    map[string]interface{} `json:"pic_infos"`
+	Retweeted   *Mblog                 `json:"retweeted_status,omitempty"`
 	LongTextRaw string
 }
 
@@ -113,7 +116,20 @@ func (c *Client) GetMblogs(userid string, page int, longtext bool) ([]*Mblog, er
 		return nil, fmt.Errorf("body not ok")
 	}
 	var mblogs []*Mblog
+	var picUrls []string
 	for _, v := range body.Data.List {
+
+		if v.PicNum > 0 {
+			for _, pic := range v.PicIds {
+				picUrl, _ := v.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+				picUrls = append(picUrls, picUrl)
+			}
+			fmt.Println(picUrls)
+		}
+		picBytes, _ := json.Marshal(picUrls)
+		pics := string(picBytes)
+		fmt.Println(pics)
+
 		if longtext {
 			if err := c.FetchMblogLongText(v); err != nil {
 				return nil, err
@@ -189,7 +205,7 @@ func (database *Database) Migrate() error {
 		return err
 	}
 
-	if _, err = db.Exec("CREATE TABLE IF NOT EXISTS mblog (UID BIGINT NOT NULL, ID BIGINT NOT NULL, MblogID VARCHAR(64) NOT NULL, TheText TEXT, CreatedAt CHAR(32), RetweetedUID BIGINT NOT NULL, RetweetedID BIGINT NOT NULL, RetweetedMblogID VARCHAR(64) NOT NULL, RetweetedTheText TEXT, RetweetedCreatedAt CHAR(32), PRIMARY KEY (UID,ID,MblogID))"); err != nil {
+	if _, err = db.Exec("CREATE TABLE IF NOT EXISTS mblog (UID BIGINT NOT NULL, ID BIGINT NOT NULL, MblogID VARCHAR(64) NOT NULL, TheText TEXT, Pics TEXT, CreatedAt CHAR(32), RetweetedUID BIGINT NOT NULL, RetweetedID BIGINT NOT NULL, RetweetedMblogID VARCHAR(64) NOT NULL, RetweetedTheText TEXT, RetweetedCreatedAt CHAR(32), PRIMARY KEY (UID,ID,MblogID))"); err != nil {
 		return err
 	}
 	return nil
@@ -220,7 +236,8 @@ func (database *Database) AddMblog(mblog *Mblog) error {
 	}
 
 	var uid, id int64
-	var mblogID, theText, createdAt string
+	var mblogID, theText, createdAt, pics string
+	var picUrls []string
 	if mblog.Retweeted != nil {
 		if mblog.Retweeted.User != nil {
 			uid = mblog.Retweeted.User.ID
@@ -232,8 +249,18 @@ func (database *Database) AddMblog(mblog *Mblog) error {
 		theText = mblog.Retweeted.TheText()
 		createdAt = mblog.Retweeted.CreatedAt
 	}
-	if _, err := db.Exec("INSERT INTO mblog(UID, ID, MblogID, TheText, CreatedAt, RetweetedUID, RetweetedID, RetweetedMblogID, RetweetedTheText, RetweetedCreatedAt) VALUES(?,?,?,?,?,?,?,?,?,?)",
-		mblog.User.ID, mblog.ID, mblog.MblogID, mblog.TheText(), mblog.CreatedAt, uid, id, mblogID, theText, createdAt); err != nil {
+
+	if mblog.PicNum > 0 {
+		for _, pic := range mblog.PicIds {
+			picUrl, _ := mblog.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+			picUrls = append(picUrls, picUrl)
+		}
+		picBytes, _ := json.Marshal(picUrls)
+		pics = string(picBytes)
+	}
+	if _, err := db.Exec("INSERT INTO mblog(UID, ID, MblogID, TheText, Pics, CreatedAt, RetweetedUID, RetweetedID, "+
+		"RetweetedMblogID, RetweetedTheText, RetweetedCreatedAt) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+		mblog.User.ID, mblog.ID, mblog.MblogID, mblog.TheText(), pics, mblog.CreatedAt, uid, id, mblogID, theText, createdAt); err != nil {
 		return err
 	}
 	return nil
