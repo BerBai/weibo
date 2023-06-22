@@ -192,7 +192,7 @@ func (database *Database) Migrate() error {
 		return err
 	}
 
-	if _, err = db.Exec("CREATE TABLE IF NOT EXISTS mblog (UID BIGINT NOT NULL, ID BIGINT NOT NULL, MblogID VARCHAR(64) NOT NULL, TheText TEXT, Pics TEXT, CreatedAt CHAR(32), RetweetedUID BIGINT NOT NULL, RetweetedID BIGINT NOT NULL, RetweetedMblogID VARCHAR(64) NOT NULL, RetweetedTheText TEXT, RetweetedCreatedAt CHAR(32), PRIMARY KEY (UID,ID,MblogID))"); err != nil {
+	if _, err = db.Exec("CREATE TABLE IF NOT EXISTS mblog (UID BIGINT NOT NULL, ID BIGINT NOT NULL, MblogID VARCHAR(64) NOT NULL, TheText TEXT, Pics TEXT, CreatedAt CHAR(32), RetweetedUID BIGINT NOT NULL, RetweetedID BIGINT NOT NULL, RetweetedMblogID VARCHAR(64) NOT NULL, RetweetedTheText TEXT, RetweetedPics TEXT, RetweetedCreatedAt CHAR(32), PRIMARY KEY (UID,ID,MblogID))"); err != nil {
 		return err
 	}
 	return nil
@@ -223,8 +223,8 @@ func (database *Database) AddMblog(mblog *Mblog) error {
 	}
 
 	var uid, id int64
-	var mblogID, theText, createdAt, pics string
-	var picUrls []string
+	var mblogID, theText, createdAt, pics, rePics string
+	var picUrls, rePicUrls []string
 	if mblog.Retweeted != nil {
 		if mblog.Retweeted.User != nil {
 			uid = mblog.Retweeted.User.ID
@@ -235,6 +235,14 @@ func (database *Database) AddMblog(mblog *Mblog) error {
 		mblogID = mblog.Retweeted.MblogID
 		theText = mblog.Retweeted.TheText()
 		createdAt = mblog.Retweeted.CreatedAt
+		if mblog.Retweeted.PicNum > 0 {
+			for _, pic := range mblog.Retweeted.PicIds {
+				picUrl, _ := mblog.Retweeted.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+				rePicUrls = append(picUrls, picUrl)
+			}
+			rePicBytes, _ := json.Marshal(rePicUrls)
+			rePics = string(rePicBytes)
+		}
 	}
 
 	if mblog.PicNum > 0 {
@@ -246,8 +254,8 @@ func (database *Database) AddMblog(mblog *Mblog) error {
 		pics = string(picBytes)
 	}
 	if _, err := db.Exec("INSERT INTO mblog(UID, ID, MblogID, TheText, Pics, CreatedAt, RetweetedUID, RetweetedID, "+
-		"RetweetedMblogID, RetweetedTheText, RetweetedCreatedAt) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-		mblog.User.ID, mblog.ID, mblog.MblogID, mblog.TheText(), pics, mblog.CreatedAt, uid, id, mblogID, theText, createdAt); err != nil {
+		"RetweetedMblogID, RetweetedTheText, RetweetedPics, RetweetedCreatedAt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+		mblog.User.ID, mblog.ID, mblog.MblogID, mblog.TheText(), pics, mblog.CreatedAt, uid, id, mblogID, theText, rePics, createdAt); err != nil {
 		return err
 	}
 	return nil
