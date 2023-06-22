@@ -116,20 +116,7 @@ func (c *Client) GetMblogs(userid string, page int, longtext bool) ([]*Mblog, er
 		return nil, fmt.Errorf("body not ok")
 	}
 	var mblogs []*Mblog
-	var picUrls []string
 	for _, v := range body.Data.List {
-
-		if v.PicNum > 0 {
-			for _, pic := range v.PicIds {
-				picUrl, _ := v.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-				picUrls = append(picUrls, picUrl)
-			}
-			fmt.Println(picUrls)
-		}
-		picBytes, _ := json.Marshal(picUrls)
-		pics := string(picBytes)
-		fmt.Println(pics)
-
 		if longtext {
 			if err := c.FetchMblogLongText(v); err != nil {
 				return nil, err
