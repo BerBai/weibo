@@ -107,6 +107,43 @@ func (c *Client) getJSON(_url string, body any) error {
 	return nil
 }
 
+func (c *Client) DownPics(mblog *Mblog) error {
+	if mblog.PicNum > 0 {
+		client := &http.Client{}
+		if c.Proxy != "" {
+			if proxyUrl, err := url.Parse(c.Proxy); err == nil {
+				client.Transport = &http.Transport{
+					Proxy: http.ProxyURL(proxyUrl),
+				}
+			}
+		}
+		for _, pic := range mblog.Retweeted.PicIds {
+			_picUrl, _ := mblog.Retweeted.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+			req, err := http.NewRequest("GET", _picUrl, nil)
+			if err != nil {
+				return err
+			}
+			req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0")
+			req.Header.Set("Host", "weibo.com")
+			req.Header.Set("Cookie", c.Cookie)
+			req.Header.Set("Accept", "*/*")
+			req.Header.Set("referer", "https://weibo.com/")
+
+			res, err := client.Do(req)
+			data, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+			picname := mblog.MblogID + pic + ".jpg"
+			err = ioutil.WriteFile(picname, data, 666)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (c *Client) GetMblogs(userid string, page int, longtext bool) ([]*Mblog, error) {
 	url := fmt.Sprintf("https://weibo.com/ajax/statuses/mymblog?uid=%s&page=%d&feature=0", userid, page)
 	body := &MymblogBody{}
