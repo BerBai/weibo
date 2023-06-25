@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 )
 
@@ -117,8 +118,45 @@ func (c *Client) DownPics(mblog *Mblog, path string) error {
 				}
 			}
 		}
-		for _, pic := range mblog.Retweeted.PicIds {
-			_picUrl, _ := mblog.Retweeted.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+
+		if mblog.Retweeted != nil {
+			for _, pic := range mblog.Retweeted.PicIds {
+
+				if _, err := os.Stat(path + mblog.Retweeted.MblogID + pic + ".jpg"); err == nil {
+					continue
+				}
+
+				_picUrl, _ := mblog.Retweeted.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+				req, err := http.NewRequest("GET", _picUrl, nil)
+				if err != nil {
+					return err
+				}
+				req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0")
+				req.Header.Set("Host", "weibo.com")
+				req.Header.Set("Cookie", c.Cookie)
+				req.Header.Set("Accept", "*/*")
+				req.Header.Set("referer", "https://weibo.com/")
+
+				res, err := client.Do(req)
+				data, err := ioutil.ReadAll(res.Body)
+				if err != nil {
+					return err
+				}
+				picname := path + mblog.Retweeted.MblogID + pic + ".jpg"
+				err = ioutil.WriteFile(picname, data, 666)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		for _, pic := range mblog.PicIds {
+
+			if _, err := os.Stat(path + mblog.MblogID + pic + ".jpg"); err == nil {
+				continue
+			}
+
+			_picUrl, _ := mblog.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
 			req, err := http.NewRequest("GET", _picUrl, nil)
 			if err != nil {
 				return err
@@ -140,6 +178,7 @@ func (c *Client) DownPics(mblog *Mblog, path string) error {
 				return err
 			}
 		}
+
 	}
 	return nil
 }
