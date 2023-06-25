@@ -107,7 +107,7 @@ func (c *Client) getJSON(_url string, body any) error {
 	return nil
 }
 
-func (c *Client) DownPics(mblog *Mblog) error {
+func (c *Client) DownPics(mblog *Mblog, path string) error {
 	if mblog.PicNum > 0 {
 		client := &http.Client{}
 		if c.Proxy != "" {
@@ -134,7 +134,7 @@ func (c *Client) DownPics(mblog *Mblog) error {
 			if err != nil {
 				return err
 			}
-			picname := mblog.MblogID + pic + ".jpg"
+			picname := path + mblog.MblogID + pic + ".jpg"
 			err = ioutil.WriteFile(picname, data, 666)
 			if err != nil {
 				return err
