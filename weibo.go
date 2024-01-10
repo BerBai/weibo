@@ -20,18 +20,19 @@ type User struct {
 }
 
 type Mblog struct {
-	User        *User                  `json:"user"`
-	CreatedAt   string                 `json:"created_at"`
-	ID          int64                  `json:"id"`
-	MblogID     string                 `json:"mblogid"`
-	TextRaw     string                 `json:"text_raw"`
-	Text        string                 `json:"text"`
-	IsLongText  bool                   `json:"isLongText"`
-	PicNum      int8                   `json:"pic_num"`
-	PicIds      []string               `json:"pic_ids"`
-	PicInfos    map[string]interface{} `json:"pic_infos"`
-	Retweeted   *Mblog                 `json:"retweeted_status,omitempty"`
-	LongTextRaw string
+	User         *User                  `json:"user"`
+	CreatedAt    string                 `json:"created_at"`
+	ID           int64                  `json:"id"`
+	MblogID      string                 `json:"mblogid"`
+	TextRaw      string                 `json:"text_raw"`
+	Text         string                 `json:"text"`
+	IsLongText   bool                   `json:"isLongText"`
+	PicNum       int8                   `json:"pic_num"`
+	PicIds       []string               `json:"pic_ids"`
+	PicInfos     map[string]interface{} `json:"pic_infos"`
+	MixMediaInfo map[string]interface{} `json:"mix_media_info"`
+	Retweeted    *Mblog                 `json:"retweeted_status,omitempty"`
+	LongTextRaw  string
 }
 
 func (m *Mblog) TheText() string {
@@ -121,64 +122,67 @@ func (c *Client) DownPics(mblog *Mblog, path string) error {
 
 		if mblog.Retweeted != nil {
 			for _, pic := range mblog.Retweeted.PicIds {
-
-				if _, err := os.Stat(path + mblog.Retweeted.MblogID + pic + ".jpg"); err == nil {
+				if _, err := os.Stat(path + pic + ".jpg"); err == nil {
 					continue
 				}
 
-				_picUrl, _ := mblog.Retweeted.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-				req, err := http.NewRequest("GET", _picUrl, nil)
-				if err != nil {
-					return err
-				}
-				req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0")
-				req.Header.Set("Host", "weibo.com")
-				req.Header.Set("Cookie", c.Cookie)
-				req.Header.Set("Accept", "*/*")
-				req.Header.Set("referer", "https://weibo.com/")
-
-				res, err := client.Do(req)
-				data, err := ioutil.ReadAll(res.Body)
-				if err != nil {
-					return err
-				}
-				picname := path + mblog.Retweeted.MblogID + pic + ".jpg"
-				err = ioutil.WriteFile(picname, data, 666)
-				if err != nil {
-					return err
+				if mblog.Retweeted.PicInfos != nil {
+					_picUrl, _ := mblog.Retweeted.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+					if err := c.DownPic(pic, _picUrl, path); err != nil {
+						return err
+					}
+				} else if mblog.Retweeted.MixMediaInfo != nil {
+					// todo 混合媒体处理
+					//_picUrl, _ := mblog.Retweeted.MixMediaInfo["items"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+					//if err := c.DownPic(pic, _picUrl, path); err != nil {
+					//	return err
+					//}
 				}
 			}
 		}
 
 		for _, pic := range mblog.PicIds {
 
-			if _, err := os.Stat(path + mblog.MblogID + pic + ".jpg"); err == nil {
+			if _, err := os.Stat(path + pic + ".jpg"); err == nil {
 				continue
 			}
-
-			_picUrl, _ := mblog.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-			req, err := http.NewRequest("GET", _picUrl, nil)
-			if err != nil {
-				return err
+			if mblog.PicInfos != nil {
+				_picUrl, _ := mblog.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+				if err := c.DownPic(pic, _picUrl, path); err != nil {
+					return err
+				}
 			}
-			req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0")
-			req.Header.Set("Host", "weibo.com")
-			req.Header.Set("Cookie", c.Cookie)
-			req.Header.Set("Accept", "*/*")
-			req.Header.Set("referer", "https://weibo.com/")
-
-			res, err := client.Do(req)
-			data, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				return err
-			}
-			picname := path + mblog.MblogID + pic + ".jpg"
-			err = ioutil.WriteFile(picname, data, 666)
-			if err != nil {
-				return err
-			}
+			// todo 增加混合媒体处理
 		}
 
+	}
+	return nil
+}
+
+func (c *Client) DownPic(pic string, url string, path string) error {
+	if _, err := os.Stat(path + pic + ".jpg"); err == nil {
+		return nil
+	}
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0")
+	req.Header.Set("Host", "weibo.com")
+	req.Header.Set("Cookie", c.Cookie)
+	req.Header.Set("Accept", "*/*")
+	req.Header.Set("referer", "https://weibo.com/")
+
+	res, err := client.Do(req)
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	picname := path + pic + ".jpg"
+	err = ioutil.WriteFile(picname, data, 666)
+	if err != nil {
+		return err
 	}
 	return nil
 }
