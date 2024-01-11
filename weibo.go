@@ -42,6 +42,25 @@ func (m *Mblog) TheText() string {
 	return m.TextRaw
 }
 
+func (m *Mblog) PicUrls() map[string]interface{} {
+	if m == nil {
+		return nil
+	}
+	var pics map[string]interface{}
+	if m.PicNum > 0 {
+		for i, pic := range m.PicIds {
+			var picUrl string
+			if m.PicInfos != nil {
+				picUrl, _ = m.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+			} else if m.MixMediaInfo != nil {
+				picUrl, _ = m.MixMediaInfo["items"].([]interface{})[i].(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+			}
+			pics[pic] = picUrl
+		}
+	}
+	return pics
+}
+
 func (mblog *Mblog) String() string {
 	text := strings.ReplaceAll(mblog.TextRaw, "\n", "\\n")
 	if len([]rune(text)) > 50 {
@@ -119,54 +138,38 @@ func (c *Client) DownPics(mblog *Mblog, path string) error {
 				}
 			}
 		}
-
-		if mblog.Retweeted != nil {
-			for i, pic := range mblog.Retweeted.PicIds {
-				if _, err := os.Stat(path + pic + ".jpg"); err == nil {
-					continue
-				}
-
-				if mblog.Retweeted.PicInfos != nil {
-					_picUrl, _ := mblog.Retweeted.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-					if err := c.DownPic(pic, _picUrl, path); err != nil {
-						return err
-					}
-				} else if mblog.Retweeted.MixMediaInfo != nil {
-					_picUrl, _ := mblog.Retweeted.MixMediaInfo["items"].([]interface{})[i].(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-					if err := c.DownPic(pic, _picUrl, path); err != nil {
-						return err
-					}
-				}
-			}
-		}
-
-		for i, pic := range mblog.PicIds {
-			if _, err := os.Stat(path + pic + ".jpg"); err == nil {
-				continue
-			}
-			if mblog.PicInfos != nil {
-				_picUrl, _ := mblog.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-				if err := c.DownPic(pic, _picUrl, path); err != nil {
-					return err
-				}
-			} else if mblog.MixMediaInfo != nil {
-				_picUrl, _ := mblog.MixMediaInfo["items"].([]interface{})[i].(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-				if err := c.DownPic(pic, _picUrl, path); err != nil {
-					return err
-				}
-			}
-		}
-
+		ExistedOrDownPic(c, mblog.Retweeted, path)
+		ExistedOrDownPic(c, mblog, path)
 	}
 	return nil
 }
 
-func (c *Client) DownPic(pic string, url string, path string) error {
-	if _, err := os.Stat(path + pic + ".jpg"); err == nil {
-		return nil
+func ExistedOrDownPic(c *Client, mblog *Mblog, path string) error {
+	if mblog != nil {
+		picUrls := mblog.PicUrls()
+		for _, pic := range mblog.PicIds {
+			if _, err := os.Stat(path + pic + ".jpg"); err == nil {
+				continue
+			}
+			if err := DownPic(c, pic, picUrls[pic].(string), path); err != nil {
+				return err
+			}
+		}
 	}
+	return nil
+}
+
+func DownPic(c *Client, pic string, picUrl string, path string) error {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+	if c.Proxy != "" {
+		if proxyUrl, err := url.Parse(c.Proxy); err == nil {
+			client.Transport = &http.Transport{
+				Proxy: http.ProxyURL(proxyUrl),
+			}
+		}
+	}
+
+	req, err := http.NewRequest("GET", picUrl, nil)
 	if err != nil {
 		return err
 	}
