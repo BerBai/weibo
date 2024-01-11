@@ -150,7 +150,7 @@ func (c *Client) DownPics(mblog *Mblog, path string) error {
 					return err
 				}
 			} else if mblog.MixMediaInfo != nil {
-				_picUrl, _ := mblog.Retweeted.MixMediaInfo["items"].(map[int]interface{})[i].(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+				_picUrl, _ := mblog.MixMediaInfo["items"].(map[int]interface{})[i].(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
 				if err := c.DownPic(pic, _picUrl, path); err != nil {
 					return err
 				}
