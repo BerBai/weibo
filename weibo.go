@@ -47,6 +47,7 @@ func (m *Mblog) PicUrls() map[string]interface{} {
 		return nil
 	}
 	var pics map[string]interface{}
+	pics = make(map[string]interface{})
 	if m.PicNum > 0 {
 		for i, pic := range m.PicIds {
 			var picUrl string
