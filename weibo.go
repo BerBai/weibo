@@ -121,7 +121,7 @@ func (c *Client) DownPics(mblog *Mblog, path string) error {
 		}
 
 		if mblog.Retweeted != nil {
-			for _, pic := range mblog.Retweeted.PicIds {
+			for i, pic := range mblog.Retweeted.PicIds {
 				if _, err := os.Stat(path + pic + ".jpg"); err == nil {
 					continue
 				}
@@ -132,17 +132,15 @@ func (c *Client) DownPics(mblog *Mblog, path string) error {
 						return err
 					}
 				} else if mblog.Retweeted.MixMediaInfo != nil {
-					// todo 混合媒体处理
-					//_picUrl, _ := mblog.Retweeted.MixMediaInfo["items"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-					//if err := c.DownPic(pic, _picUrl, path); err != nil {
-					//	return err
-					//}
+					_picUrl, _ := mblog.Retweeted.MixMediaInfo["items"].(map[int]interface{})[i].(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+					if err := c.DownPic(pic, _picUrl, path); err != nil {
+						return err
+					}
 				}
 			}
 		}
 
-		for _, pic := range mblog.PicIds {
-
+		for i, pic := range mblog.PicIds {
 			if _, err := os.Stat(path + pic + ".jpg"); err == nil {
 				continue
 			}
@@ -151,8 +149,12 @@ func (c *Client) DownPics(mblog *Mblog, path string) error {
 				if err := c.DownPic(pic, _picUrl, path); err != nil {
 					return err
 				}
+			} else if mblog.MixMediaInfo != nil {
+				_picUrl, _ := mblog.Retweeted.MixMediaInfo["items"].(map[int]interface{})[i].(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+				if err := c.DownPic(pic, _picUrl, path); err != nil {
+					return err
+				}
 			}
-			// todo 增加混合媒体处理
 		}
 
 	}
