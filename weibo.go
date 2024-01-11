@@ -320,21 +320,16 @@ func (database *Database) AddMblog(mblog *Mblog) error {
 		mblogID = mblog.Retweeted.MblogID
 		theText = mblog.Retweeted.TheText()
 		createdAt = mblog.Retweeted.CreatedAt
-		if mblog.Retweeted.PicNum > 0 {
-			for _, pic := range mblog.Retweeted.PicIds {
-				picUrl, _ := mblog.Retweeted.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-				rePicUrls = append(picUrls, picUrl)
-			}
+		urls := mblog.Retweeted.PicUrls()
+		for _, picUrl := range urls {
+			rePicUrls = append(picUrls, picUrl.(string))
 			rePicBytes, _ := json.Marshal(rePicUrls)
 			rePics = string(rePicBytes)
 		}
 	}
-
-	if mblog.PicNum > 0 {
-		for _, pic := range mblog.PicIds {
-			picUrl, _ := mblog.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-			picUrls = append(picUrls, picUrl)
-		}
+	urls := mblog.PicUrls()
+	for _, picUrl := range urls {
+		picUrls = append(picUrls, picUrl.(string))
 		picBytes, _ := json.Marshal(picUrls)
 		pics = string(picBytes)
 	}
