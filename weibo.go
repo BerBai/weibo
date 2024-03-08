@@ -17,6 +17,8 @@ var BadRequest = errors.New("BadRequest")
 type User struct {
 	ID   int64  `json:"id"`
 	Name string `json:"screen_name"`
+	Icon string `json:"avatar_large"`
+	Remark string `json:"remark"`
 }
 
 type Mblog struct {
@@ -185,8 +187,8 @@ func DownPic(c *Client, pic string, picUrl string, path string) error {
 	if err != nil {
 		return err
 	}
-	picname := path + pic + ".jpg"
-	err = ioutil.WriteFile(picname, data, 666)
+	pic := path + pic + ".jpg"
+	err = ioutil.WriteFile(pic, data, 666)
 	if err != nil {
 		return err
 	}
