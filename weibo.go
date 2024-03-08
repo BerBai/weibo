@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -15,9 +16,9 @@ import (
 var BadRequest = errors.New("BadRequest")
 
 type User struct {
-	ID   int64  `json:"id"`
-	Name string `json:"screen_name"`
-	Icon string `json:"avatar_large"`
+	ID     int64  `json:"id"`
+	Name   string `json:"screen_name"`
+	Icon   string `json:"avatar_large"`
 	Remark string `json:"remark"`
 }
 
@@ -183,12 +184,12 @@ func DownPic(c *Client, pic string, picUrl string, path string) error {
 	req.Header.Set("referer", "https://weibo.com/")
 
 	res, err := client.Do(req)
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-	pic := path + pic + ".jpg"
-	err = ioutil.WriteFile(pic, data, 666)
+	picname := path + pic + ".jpg"
+	err = os.WriteFile(picname, data, 666)
 	if err != nil {
 		return err
 	}
