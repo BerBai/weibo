@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -121,7 +120,7 @@ func (c *Client) getJSON(_url string, body any) error {
 		return BadRequest
 	}
 
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
@@ -188,6 +187,13 @@ func DownPic(c *Client, pic string, picUrl string, path string) error {
 	if err != nil {
 		return err
 	}
+	_, err = os.Stat(path)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
 	picname := path + pic + ".jpg"
 	err = os.WriteFile(picname, data, 666)
 	if err != nil {
@@ -197,9 +203,9 @@ func DownPic(c *Client, pic string, picUrl string, path string) error {
 }
 
 func (c *Client) GetMblogs(userid string, page int, longtext bool) ([]*Mblog, error) {
-	url := fmt.Sprintf("https://weibo.com/ajax/statuses/mymblog?uid=%s&page=%d&feature=0", userid, page)
+	blogUrl := fmt.Sprintf("https://weibo.com/ajax/statuses/mymblog?uid=%s&page=%d&feature=0", userid, page)
 	body := &MymblogBody{}
-	if err := c.getJSON(url, body); err != nil {
+	if err := c.getJSON(blogUrl, body); err != nil {
 		return nil, err
 	} else if body.Ok != 1 {
 		return nil, fmt.Errorf("body not ok")
