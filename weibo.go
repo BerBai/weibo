@@ -51,14 +51,21 @@ func (m *Mblog) PicUrls() map[string]interface{} {
 	var pics map[string]interface{}
 	pics = make(map[string]interface{})
 	if m.PicNum > 0 {
-		for i, pic := range m.PicIds {
-			var picUrl string
-			if m.PicInfos != nil {
+		if m.PicInfos != nil {
+			for _, pic := range m.PicIds {
+				var picUrl string
 				picUrl, _ = m.PicInfos[pic].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
-			} else if m.MixMediaInfo != nil {
-				picUrl, _ = m.MixMediaInfo["items"].([]interface{})[i].(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+				pics[pic] = picUrl
 			}
-			pics[pic] = picUrl
+		} else if m.MixMediaInfo != nil {
+			items := m.MixMediaInfo["items"].([]interface{})
+			for _, item := range items {
+				if item.(map[string]interface{})["type"] == "pic" {
+					pic := item.(map[string]interface{})["id"]
+					picUrl := item.(map[string]interface{})["data"].(map[string]interface{})["largest"].(map[string]interface{})["url"].(string)
+					pics[pic.(string)] = picUrl
+				}
+			}
 		}
 	}
 	return pics
