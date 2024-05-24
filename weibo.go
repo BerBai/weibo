@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -108,20 +109,33 @@ type checkCookie struct {
 	CheckMblogID string `default:"OfKCwyf4P"`  // 检查cookie的目标隐藏博文
 }
 
+func DefaultCheck() (check checkCookie) {
+	check = checkCookie{
+		Check:        true,
+		Checked:      false,
+		HiddenMblog:  "live",
+		CheckUser:    "6874180501",
+		CheckMblogID: "OfKCwyf4P",
+	}
+	return
+}
+
 func (c *Client) CheckCookie() (isActivate bool, err error) {
 	var longtext string
 	isActivate = false
 
-	c.AddFriend(c.Check.CheckUser)
+	if err = c.AddFriend(c.Check.CheckUser); err != nil {
+		e := err.Error()
+		fmt.Println(e)
+		return
+	}
 
 	if longtext, err = c.GetMblogLongText(c.Check.CheckMblogID); err != nil {
-		if err == BadRequest {
-			return true, nil
-		}
 		return
 	} else {
 		if strings.Contains(longtext, "live") {
 			isActivate = true
+			c.Check.Checked = isActivate
 		}
 		return
 	}
@@ -164,7 +178,12 @@ func (c *Client) postJson(_url string, data any) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
-	req.Header.Set("X-Xsrf-Token", "JRdTtx4jrsyK5tWAHWvM8mpJ")
+
+	re := regexp.MustCompile(`XSRF-TOKEN=(.*?);`)
+	xsrfToken := re.FindStringSubmatch(c.Cookie)
+	if len(xsrfToken) > 1 {
+		req.Header.Set("X-Xsrf-Token", xsrfToken[1])
+	}
 
 	res, err := client.Do(req)
 	if err != nil {
