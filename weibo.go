@@ -1,6 +1,7 @@
 package weibo
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -96,6 +97,111 @@ type LongtextBody struct {
 type Client struct {
 	Cookie string
 	Proxy  string
+	Check  checkCookie
+}
+
+type checkCookie struct {
+	Check        bool   `default:"false"`      // 是否检查cookie
+	Checked      bool   `default:"false"`      // 判断已检查了cookie的标志位
+	HiddenMblog  string `default:"live"`       // 隐藏博文子串
+	CheckUser    string `default:"6874180501"` // 检查cookie的目标用户
+	CheckMblogID string `default:"OfKCwyf4P"`  // 检查cookie的目标隐藏博文
+}
+
+func (c *Client) CheckCookie() (isActivate bool, err error) {
+	var longtext string
+	isActivate = false
+
+	c.AddFriend(c.Check.CheckUser)
+
+	if longtext, err = c.GetMblogLongText(c.Check.CheckMblogID); err != nil {
+		if err == BadRequest {
+			return true, nil
+		}
+		return
+	} else {
+		if strings.Contains(longtext, "live") {
+			isActivate = true
+		}
+		return
+	}
+}
+
+func (c *Client) AddFriend(uid string) (err error) {
+	friendUrl := "https://weibo.com/ajax/friendships/create"
+	data := map[string]string{
+		"friend_uid": uid,
+		"lpage":      "profile",
+		"page":       "profile",
+	}
+
+	if err := c.postJson(friendUrl, &data); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) postJson(_url string, data any) error {
+	client := &http.Client{}
+	if c.Proxy != "" {
+		if proxyUrl, err := url.Parse(c.Proxy); err == nil {
+			client.Transport = &http.Transport{
+				Proxy: http.ProxyURL(proxyUrl),
+			}
+		}
+	}
+
+	jsonData, err := json.Marshal(data)
+	req, err := http.NewRequest("POST", _url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:107.0) Gecko/20100101 Firefox/107.0")
+	req.Header.Set("Origin", "https://weibo.com")
+	req.Header.Set("Cookie", c.Cookie)
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+	//req.Header.Set("Referer", "https://weibo.com/u/6874180501")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6")
+	req.Header.Set("X-Xsrf-Token", "JRdTtx4jrsyK5tWAHWvM8mpJ")
+
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusBadRequest {
+		return BadRequest
+	}
+
+	//_, err := io.ReadAll(res.Body)
+	//if err != nil {
+	//	return err
+	//}
+	//var result map[string]interface{}
+	//err = json.Unmarshal(data1, &result)
+	//if err != nil {
+	//	fmt.Println("Error parsing JSON:", err)
+	//	// 检查是否是因为引号错误
+	//	if strings.Contains(err.Error(), "invalid character") {
+	//		data2 := strings.Replace(string(data1), "'", "\"", -1)
+	//		// 再次尝试解析
+	//		err = json.Unmarshal([]byte(data2), &result)
+	//		if err != nil {
+	//			fmt.Println("Error parsing JSON after fixing quotes:", err)
+	//		} else {
+	//			fmt.Println("JSON parsed successfully after fixing quotes.")
+	//		}
+	//	}
+	//} else {
+	//	fmt.Println("JSON parsed successfully.")
+	//}
+	//if err := err; err != nil {
+	//	return err
+	//}
+	return nil
 }
 
 func (c *Client) getJSON(_url string, body any) error {
