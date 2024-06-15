@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/go-sql-driver/mysql v1.7.1
+	github.com/grokify/html-strip-tags-go v0.1.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/urfave/cli/v2 v2.25.5
 )

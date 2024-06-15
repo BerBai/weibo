@@ -125,8 +125,6 @@ func (c *Client) CheckCookie() (isActivate bool, err error) {
 	isActivate = false
 
 	if err = c.AddFriend(c.Check.CheckUser); err != nil {
-		e := err.Error()
-		fmt.Println(e)
 		return
 	}
 
@@ -195,31 +193,6 @@ func (c *Client) postJson(_url string, data any) error {
 		return BadRequest
 	}
 
-	//_, err := io.ReadAll(res.Body)
-	//if err != nil {
-	//	return err
-	//}
-	//var result map[string]interface{}
-	//err = json.Unmarshal(data1, &result)
-	//if err != nil {
-	//	fmt.Println("Error parsing JSON:", err)
-	//	// 检查是否是因为引号错误
-	//	if strings.Contains(err.Error(), "invalid character") {
-	//		data2 := strings.Replace(string(data1), "'", "\"", -1)
-	//		// 再次尝试解析
-	//		err = json.Unmarshal([]byte(data2), &result)
-	//		if err != nil {
-	//			fmt.Println("Error parsing JSON after fixing quotes:", err)
-	//		} else {
-	//			fmt.Println("JSON parsed successfully after fixing quotes.")
-	//		}
-	//	}
-	//} else {
-	//	fmt.Println("JSON parsed successfully.")
-	//}
-	//if err := err; err != nil {
-	//	return err
-	//}
 	return nil
 }
 
@@ -256,7 +229,6 @@ func (c *Client) getJSON(_url string, body any) error {
 	if err != nil {
 		return err
 	}
-
 	if err := json.Unmarshal(data, body); err != nil {
 		return err
 	}
