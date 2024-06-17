@@ -266,6 +266,23 @@ func ExistedOrDownPic(c *Client, mblog *Mblog, path string) error {
 	return nil
 }
 
+func (c *Client) DownPicsByUrl(name []string, urls []string, path string) error {
+	if len(urls) > 0 {
+		client := &http.Client{}
+		if c.Proxy != "" {
+			if proxyUrl, err := url.Parse(c.Proxy); err == nil {
+				client.Transport = &http.Transport{
+					Proxy: http.ProxyURL(proxyUrl),
+				}
+			}
+		}
+		for i, url := range urls {
+			DownPic(c, name[i], url, path)
+		}
+	}
+	return nil
+}
+
 func DownPic(c *Client, pic string, picUrl string, path string) error {
 	client := &http.Client{}
 	if c.Proxy != "" {
