@@ -109,7 +109,10 @@ func (c *Client) GetCMblogs(userid string, page int, longtext bool) ([]*CMblog, 
 		//	continue
 		//}
 		if card.CardType == 11 {
-			if longtext && len(card.CardGroup) > 0 {
+			if len(card.CardGroup) == 0 {
+				continue
+			}
+			if longtext {
 				if err := c.FetchCMblogLongText(&card.CardGroup[0].Mblog); err != nil {
 					return nil, err
 				}
@@ -152,7 +155,10 @@ func (c *Client) GetMMblogs(userid string, page int, longtext bool) ([]*CMblog, 
 		//	continue
 		//}
 		if card.CardType == 11 {
-			if longtext && len(card.CardGroup) > 0 {
+			if len(card.CardGroup) == 0 {
+				continue
+			}
+			if longtext {
 				if err := c.FetchCMblogLongText(&card.CardGroup[0].Mblog); err != nil {
 					return nil, err
 				}
