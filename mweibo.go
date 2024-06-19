@@ -16,12 +16,14 @@ type CMblogBody struct {
 
 type Card struct {
 	CardType  int8         `json:"card_type"`
+	ShowType  int8         `json:"show_Type"`
 	CardGroup []*CardGroup `json:"card_group,omitempty"`
 	Mblog     CMblog       `json:"mblog,omitempty"`
 }
 
 type CardGroup struct {
 	CardType int8   `json:"card_type"`
+	ShowType int8   `json:"show_Type"`
 	Mblog    CMblog `json:"mblog"`
 }
 
@@ -103,7 +105,9 @@ func (c *Client) GetCMblogs(userid string, page int, longtext bool) ([]*CMblog, 
 	}
 	var mblogs []*CMblog
 	for _, card := range body.Data.Cards {
-
+		if card.ShowType == 0 {
+			continue
+		}
 		if card.CardType == 11 {
 			if longtext {
 				if err := c.FetchCMblogLongText(&card.CardGroup[0].Mblog); err != nil {
@@ -147,6 +151,7 @@ func (c *Client) GetMMblogs(userid string, page int, longtext bool) ([]*CMblog, 
 
 		if card.CardType == 11 {
 			if longtext {
+
 				if err := c.FetchCMblogLongText(&card.CardGroup[0].Mblog); err != nil {
 					return nil, err
 				}
