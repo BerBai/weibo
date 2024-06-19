@@ -15,10 +15,11 @@ type CMblogBody struct {
 }
 
 type Card struct {
-	CardType  int8         `json:"card_type"`
-	ShowType  int8         `json:"show_Type"`
-	CardGroup []*CardGroup `json:"card_group,omitempty"`
-	Mblog     CMblog       `json:"mblog,omitempty"`
+	CardType       int8         `json:"card_type"`
+	ShowType       int8         `json:"show_Type"`
+	SkipGroupTitle bool         `json:"skip_group_title,omitempty"`
+	CardGroup      []*CardGroup `json:"card_group,omitempty"`
+	Mblog          CMblog       `json:"mblog,omitempty"`
 }
 
 type CardGroup struct {
@@ -109,7 +110,7 @@ func (c *Client) GetCMblogs(userid string, page int, longtext bool) ([]*CMblog, 
 		//	continue
 		//}
 		if card.CardType == 11 {
-			if len(card.CardGroup) == 0 {
+			if len(card.CardGroup) == 0 || card.SkipGroupTitle {
 				continue
 			}
 			if longtext {
@@ -155,7 +156,7 @@ func (c *Client) GetMMblogs(userid string, page int, longtext bool) ([]*CMblog, 
 		//	continue
 		//}
 		if card.CardType == 11 {
-			if len(card.CardGroup) == 0 {
+			if len(card.CardGroup) == 0 || card.SkipGroupTitle {
 				continue
 			}
 			if longtext {
