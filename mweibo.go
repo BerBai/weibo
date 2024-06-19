@@ -148,10 +148,11 @@ func (c *Client) GetMMblogs(userid string, page int, longtext bool) ([]*CMblog, 
 	}
 	var mblogs []*CMblog
 	for _, card := range body.Data.Cards {
-
+		if card.ShowType == 0 {
+			continue
+		}
 		if card.CardType == 11 {
 			if longtext {
-
 				if err := c.FetchCMblogLongText(&card.CardGroup[0].Mblog); err != nil {
 					return nil, err
 				}
