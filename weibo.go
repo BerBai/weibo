@@ -36,6 +36,9 @@ type Mblog struct {
 	PicInfos     map[string]interface{} `json:"pic_infos"`
 	MixMediaInfo map[string]interface{} `json:"mix_media_info"`
 	Retweeted    *Mblog                 `json:"retweeted_status,omitempty"`
+	Source       string                 `json:"source"`
+	RegionName   string                 `json:"region_name"`
+	Ok           int                    `json:"ok,omitempty"`
 	LongTextRaw  string
 }
 
@@ -321,6 +324,17 @@ func DownPic(c *Client, pic string, picUrl string, path string) error {
 		return err
 	}
 	return nil
+}
+
+func (c *Client) GetMblog(mblogId string) (*Mblog, error) {
+	mblogUrl := fmt.Sprintf("https://weibo.com/ajax/statuses/show?id=%s&locale=zh-CN", mblogId)
+	body := &Mblog{}
+	if err := c.getJSON(mblogUrl, body); err != nil {
+		return nil, err
+	} else if body.Ok != 1 {
+		return nil, fmt.Errorf("body not ok")
+	}
+	return body, nil
 }
 
 func (c *Client) GetMblogs(userid string, page int, longtext bool) ([]*Mblog, error) {
