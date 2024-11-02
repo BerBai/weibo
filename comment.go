@@ -38,6 +38,7 @@ type Comments struct {
 	AllowFollow          bool          `json:"allow_follow"`
 	ItemCategory         string        `json:"item_category"`
 	Comments             []*Comments   `json:"comments"`
+	ReplyComment         *Comments     `json:"reply_comment,omitempty"`
 	MaxId                int64         `json:"max_id"`
 	TotalNumber          int           `json:"total_number"`
 	IsLikedByMblogAuthor bool          `json:"isLikedByMblogAuthor"`
@@ -47,28 +48,28 @@ type Comments struct {
 		Text          string `json:"text"`
 		HighlightText string `json:"highlight_text"`
 	} `json:"more_info"`
-	TextRaw string `json:"text_raw"`
-	Urls []UrlStruct `json:"url_struct,omitempty"`
+	TextRaw string      `json:"text_raw"`
+	Urls    []UrlStruct `json:"url_struct,omitempty"`
 }
 
 type UrlStruct struct {
-	UrlTitle   string `json:"url_title"`
-	UrlTypePic string `json:"url_type_pic"`
-	OriUrl     string `json:"ori_url"`
-	ShortUrl   string `json:"short_url"`
-	LongUrl    string `json:"long_url"`
-	UrlType    int    `json:"url_type"`
-	Result     bool   `json:"result"`
-	StorageType string `json:"storage_type"`
-	Hide        int    `json:"hide"`
-	ObjectType  string `json:"object_type"`
-	Position    int    `json:"position"`
+	UrlTitle    string                 `json:"url_title"`
+	UrlTypePic  string                 `json:"url_type_pic"`
+	OriUrl      string                 `json:"ori_url"`
+	ShortUrl    string                 `json:"short_url"`
+	LongUrl     string                 `json:"long_url"`
+	UrlType     int                    `json:"url_type"`
+	Result      bool                   `json:"result"`
+	StorageType string                 `json:"storage_type"`
+	Hide        int                    `json:"hide"`
+	ObjectType  string                 `json:"object_type"`
+	Position    int                    `json:"position"`
 	PicInfos    map[string]interface{} `json:"pic_infos"`
-	PicIds  []string `json:"pic_ids"`
-	GifName string   `json:"gif_name"`
-	H5TargetUrl string `json:"h5_target_url"`
-	NeedSaveObj int    `json:"need_save_obj"`
-} 
+	PicIds      []string               `json:"pic_ids"`
+	GifName     string                 `json:"gif_name"`
+	H5TargetUrl string                 `json:"h5_target_url"`
+	NeedSaveObj int                    `json:"need_save_obj"`
+}
 
 // GetComments
 // - flow：0-按热度排序；1-按时间排序
